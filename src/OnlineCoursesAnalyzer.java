@@ -87,8 +87,10 @@ public class OnlineCoursesAnalyzer {
 //        Map<String, List<List<String>>> courseList = courses.stream()
 //                .collect(
 //                        Collectors.groupingBy(
-//                                Course::getInstructors,
-//
+//                                course -> {
+//                                    return course.instructors.split(", ");
+//                                },
+//                                Collectors.toList()
 //                        )
 //                );
         return null;
@@ -96,7 +98,27 @@ public class OnlineCoursesAnalyzer {
 
     //4
     public List<String> getCourses(int topK, String by) {
-        return null;
+        List<String> topCourse = new ArrayList<>();
+        if(by.equals("hours")){
+            topCourse = courses.stream()
+                    .sorted(
+                            Comparator.comparing(Course::getTotalHours).reversed()
+                                    .thenComparing(Course::getTitle)
+                    ).map(Course::getTitle)
+                    .distinct()
+                    .limit(topK)
+                    .collect(Collectors.toList());
+        } else if (by.equals("participants")) {
+            topCourse = courses.stream()
+                    .sorted(
+                            Comparator.comparing(Course::getParticipants).reversed()
+                                    .thenComparing(Course::getTitle)
+                    ).map(Course::getTitle)
+                    .distinct()
+                    .limit(topK)
+                    .collect(Collectors.toList());
+        }
+        return topCourse;
     }
 
     //5
@@ -187,4 +209,13 @@ class Course {
     public String getInstructors() {
         return instructors;
     }
+
+    public double getTotalHours() {
+        return totalHours;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
 }

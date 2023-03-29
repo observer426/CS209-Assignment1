@@ -74,45 +74,45 @@ public class OnlineCoursesAnalyzer {
       )
       );
     Map<String, Integer> sorted = init.entrySet().stream()
-      .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-      .collect(
-      Collectors.toMap(
-      Map.Entry::getKey,
-      Map.Entry::getValue,
-      (oldVal, newVal) -> oldVal,
-      LinkedHashMap::new)
+        .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+        .collect(
+        Collectors.toMap(
+        Map.Entry::getKey,
+        Map.Entry::getValue,
+          (oldVal, newVal) -> oldVal,
+        LinkedHashMap::new)
       );
     return sorted;
   }
 
   //3
   public Map<String, List<List<String>>> getCourseListOfInstructor() {
-        List<String> instr = new ArrayList<>();
-        List<String> instrStr = courses.stream()
-      .map(course -> course.instructors)
-      .distinct()
-      .toList();
+    List<String> instr = new ArrayList<>();
+    List<String> instrStr = courses.stream()
+        .map(course -> course.instructors)
+        .distinct()
+        .toList();
     instrStr.forEach(
-      s -> {
-    instr.addAll(Arrays.asList(s.split(", ")));
-      }
+        s -> {
+        instr.addAll(Arrays.asList(s.split(", ")));
+        }
     );
-        List<String> finInstructor = instr.stream().distinct().toList();
+    List<String> finInstructor = instr.stream().distinct().toList();
     Map<String, List<List<String>>> courseList = new HashMap<>();
     finInstructor.forEach(
-      s -> {
+        s -> {
         List<String> independent = courses.stream()
-    .filter(course -> course.instructors.equals(s))
-    .map(Course::getTitle)
-    .sorted()
-    .distinct().toList();
+            .filter(course -> course.instructors.equals(s))
+            .map(Course::getTitle)
+            .sorted()
+            .distinct().toList();
         List<String> dependent = courses.stream()
-    .filter(course -> !course.instructors.equals(s) &&
-      Arrays.stream(course.instructors.split(", ")).toList().contains(s)
-    )
-    .map(Course::getTitle)
-    .sorted()
-    .distinct().toList();
+            .filter(course -> !course.instructors.equals(s)
+                    && Arrays.stream(course.instructors.split(", ")).toList().contains(s)
+        )
+            .map(Course::getTitle)
+            .sorted()
+            .distinct().toList();
         List<List<String>> total = new ArrayList<>();
         total.add(independent);
         total.add(dependent);
@@ -126,8 +126,8 @@ public class OnlineCoursesAnalyzer {
   public List<String> getCourses(int topK, String by) {
     List<String> topCourse = new ArrayList<>();
     if (by.equals("hours")) {
-    topCourse = courses.stream()
-    .sorted(
+      topCourse = courses.stream()
+      .sorted(
     Comparator.comparing(Course::getTotalHours).reversed()
       .thenComparing(Course::getTitle)
     ).map(Course::getTitle)
@@ -135,9 +135,9 @@ public class OnlineCoursesAnalyzer {
     .limit(topK)
     .collect(Collectors.toList());
     } else if (by.equals("participants")) {
-    topCourse = courses.stream()
-    .sorted(
-    Comparator.comparing(Course::getParticipants).reversed()
+      topCourse = courses.stream()
+      .sorted(
+      Comparator.comparing(Course::getParticipants).reversed()
       .thenComparing(Course::getTitle)
     ).map(Course::getTitle)
     .distinct()
@@ -148,18 +148,19 @@ public class OnlineCoursesAnalyzer {
   }
 
   //5
-  public List<String> searchCourses(String courseSubject, double percentAudited, double totalCourseHours) {
+  public List<String> searchCourses(String courseSubject, double percentAudited,
+                                    double totalCourseHours) {
     List<String> selectCourses = courses.stream()
-      .filter(
-      course -> (
-      course.subject.matches("(.*)" + "(?i)" + courseSubject + "(.*)")
+        .filter(
+            course -> (
+        course.subject.matches("(.*)" + "(?i)" + courseSubject + "(.*)")
         && course.percentAudited >= percentAudited
         && course.totalHours <= totalCourseHours
       )
       ).map(Course::getTitle)
-      .distinct()
-      .sorted()
-      .toList();
+        .distinct()
+        .sorted()
+        .toList();
     return selectCourses;
   }
 
@@ -167,58 +168,53 @@ public class OnlineCoursesAnalyzer {
   public List<String> recommendCourses(int age, int gender, int isBachelorOrHigher) {
 
     Map<String, Double> avgAge = courses.stream()
-      .collect(
-      Collectors.groupingBy(Course::getNumber,
-      Collectors.averagingDouble(Course::getMedianAge)
+        .collect(
+        Collectors.groupingBy(Course::getNumber,
+        Collectors.averagingDouble(Course::getMedianAge)
       )
       );
     Map<String, Double> avgMale = courses.stream()
-      .collect(
-      Collectors.groupingBy(Course::getNumber,
-      Collectors.averagingDouble(Course::getPercentMale)
+        .collect(
+        Collectors.groupingBy(Course::getNumber,
+        Collectors.averagingDouble(Course::getPercentMale)
       )
       );
     Map<String, Double> avgDegree = courses.stream()
-      .collect(
-      Collectors.groupingBy(Course::getNumber,
-      Collectors.averagingDouble(Course::getPercentDegree)
+        .collect(
+        Collectors.groupingBy(Course::getNumber,
+        Collectors.averagingDouble(Course::getPercentDegree)
       )
       );
     Map<String, Double> similarity = new HashMap<>();
     avgAge.forEach(
-      (s, aDouble) -> {
-    double simi = Math.pow(age - aDouble, 2) + Math.pow(gender * 100 - avgMale.get(s), 2)
-    + Math.pow(isBachelorOrHigher * 100 - avgDegree.get(s), 2);
-    similarity.put(s, simi);
-      }
+        (s, aDouble) -> {
+        double simi = Math.pow(age - aDouble, 2) + Math.pow(gender * 100 - avgMale.get(s), 2)
+            + Math.pow(isBachelorOrHigher * 100 - avgDegree.get(s), 2);
+            similarity.put(s, simi);
+        }
     );
     Map<String, String> titles = new HashMap<>();
     similarity.forEach(
-      (s, aDouble) -> {
-    titles.put(s,
-    courses.stream()
-      .filter(course -> course.number.equals(s))
-      .max(Comparator.comparing(Course::getLaunchDate)).get().title);
-      }
+        (s, aDouble) -> {
+        titles.put(s,
+            courses.stream()
+            .filter(course -> course.number.equals(s))
+            .max(Comparator.comparing(Course::getLaunchDate)).get().title);
+        }
     );
 
     List<Q6> fin = new ArrayList<>();
     similarity.forEach(
-      (s, aDouble) -> {
-    fin.add(new Q6(s, titles.get(s), aDouble));
+        (s, aDouble) -> {
+        fin.add(new Q6(s, titles.get(s), aDouble));
       }
     );
     List<Q6> sorted = fin.stream()
-      .sorted(Comparator.comparing(Q6::getSimi).thenComparing(Comparator.comparing(Q6::getTitle)))
-      .toList();
-//    sorted.forEach(
-//      s->{
-//    System.out.println(s.title + " " +s.simi);
-//      }
-//    );
+        .sorted(Comparator.comparing(Q6::getSimi).thenComparing(Comparator.comparing(Q6::getTitle)))
+        .toList();
     List<String> finalTitle = sorted.stream()
-      .map(Q6::getTitle)
-      .distinct().limit(10).toList();
+        .map(Q6::getTitle)
+        .distinct().limit(10).toList();
     return finalTitle;
   }
 

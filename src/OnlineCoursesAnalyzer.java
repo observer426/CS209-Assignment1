@@ -3,9 +3,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
- *
  * This is just a demo for you, please run it on JDK17 (some statements may be not allowed in lower version).
  * This is just a demo, and you can extend and implement functions
  * based on this demo, or implement it in a different way.
@@ -46,16 +47,50 @@ public class OnlineCoursesAnalyzer {
 
     //1
     public Map<String, Integer> getPtcpCountByInst() {
-        return null;
+        Map<String, Integer> InsCnt = courses.stream()
+                .collect(Collectors.groupingBy(Course::getInstitution, Collectors.summingInt(Course::getParticipants)));
+        Map<String, Integer> sorted = InsCnt.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .collect(
+                        Collectors.toMap(
+                                Map.Entry::getKey,
+                                Map.Entry::getValue,
+                                (oldVal, newVal) -> oldVal,
+                                LinkedHashMap::new)
+                );
+        return sorted;
     }
 
     //2
     public Map<String, Integer> getPtcpCountByInstAndSubject() {
-        return null;
+        Map<String, Integer> init = courses.stream()
+                .collect(
+                        Collectors.groupingBy(
+                                course -> course.institution + "-" + course.subject,
+                                Collectors.summingInt(Course::getParticipants)
+                        )
+                );
+        Map<String,Integer> sorted = init.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .collect(
+                        Collectors.toMap(
+                                Map.Entry::getKey,
+                                Map.Entry::getValue,
+                                (oldVal, newVal) -> oldVal,
+                                LinkedHashMap::new)
+                );
+        return sorted;
     }
 
     //3
     public Map<String, List<List<String>>> getCourseListOfInstructor() {
+//        Map<String, List<List<String>>> courseList = courses.stream()
+//                .collect(
+//                        Collectors.groupingBy(
+//                                Course::getInstructors,
+//
+//                        )
+//                );
         return null;
     }
 
@@ -139,5 +174,17 @@ class Course {
         this.percentMale = percentMale;
         this.percentFemale = percentFemale;
         this.percentDegree = percentDegree;
+    }
+
+    public String getInstitution() {
+        return institution;
+    }
+
+    public int getParticipants() {
+        return participants;
+    }
+
+    public String getInstructors() {
+        return instructors;
     }
 }

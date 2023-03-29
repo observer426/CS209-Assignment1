@@ -70,7 +70,7 @@ public class OnlineCoursesAnalyzer {
                                 Collectors.summingInt(Course::getParticipants)
                         )
                 );
-        Map<String,Integer> sorted = init.entrySet().stream()
+        Map<String, Integer> sorted = init.entrySet().stream()
                 .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                 .collect(
                         Collectors.toMap(
@@ -84,22 +84,45 @@ public class OnlineCoursesAnalyzer {
 
     //3
     public Map<String, List<List<String>>> getCourseListOfInstructor() {
-//        Map<String, List<List<String>>> courseList = courses.stream()
-//                .collect(
-//                        Collectors.groupingBy(
-//                                course -> {
-//                                    return course.instructors.split(", ");
-//                                },
-//                                Collectors.toList()
-//                        )
-//                );
-        return null;
+        List<String> instr = new ArrayList<>();
+        List<String> instrStr = courses.stream()
+                .map(course -> course.instructors)
+                .distinct()
+                .toList();
+        instrStr.forEach(
+                s -> {
+                    instr.addAll(Arrays.asList(s.split(", ")));
+                }
+        );
+        List<String> finInstructor = instr.stream().distinct().toList();
+        Map<String, List<List<String>>> courseList = new HashMap<>();
+        finInstructor.forEach(
+                s -> {
+                    List<String> independent = courses.stream()
+                            .filter(course -> course.instructors.equals(s))
+                            .map(Course::getTitle)
+                            .sorted()
+                            .distinct().toList();
+                    List<String> dependent = courses.stream()
+                            .filter(course -> !course.instructors.equals(s) &&
+                                    Arrays.stream(course.instructors.split(", ")).toList().contains(s)
+                            )
+                            .map(Course::getTitle)
+                            .sorted()
+                            .distinct().toList();
+                    List<List<String>> total = new ArrayList<>();
+                    total.add(independent);
+                    total.add(dependent);
+                    courseList.put(s, total);
+                }
+        );
+        return courseList;
     }
 
     //4
     public List<String> getCourses(int topK, String by) {
         List<String> topCourse = new ArrayList<>();
-        if(by.equals("hours")){
+        if (by.equals("hours")) {
             topCourse = courses.stream()
                     .sorted(
                             Comparator.comparing(Course::getTotalHours).reversed()
@@ -123,11 +146,73 @@ public class OnlineCoursesAnalyzer {
 
     //5
     public List<String> searchCourses(String courseSubject, double percentAudited, double totalCourseHours) {
-        return null;
+        List<String> selectCourses = courses.stream()
+                .filter(
+                        course -> (
+                                course.subject.matches("(.*)" + "(?i)" + courseSubject + "(.*)")
+                                        && course.percentAudited >= percentAudited
+                                        && course.totalHours <= totalCourseHours
+                        )
+                ).map(Course::getTitle)
+                .distinct()
+                .sorted()
+                .toList();
+        return selectCourses;
     }
 
     //6
     public List<String> recommendCourses(int age, int gender, int isBachelorOrHigher) {
+
+        Map<String, Double> avgAge = courses.stream()
+                .collect(
+                        Collectors.groupingBy(Course::getNumber,
+                                Collectors.averagingDouble(Course::getMedianAge)
+                        )
+                );
+        Map<String, Double> avgMale = courses.stream()
+                .collect(
+                        Collectors.groupingBy(Course::getNumber,
+                                Collectors.averagingDouble(Course::getPercentMale)
+                        )
+                );
+        Map<String, Double> avgDegree = courses.stream()
+                .collect(
+                        Collectors.groupingBy(Course::getNumber,
+                                Collectors.averagingDouble(Course::getPercentDegree)
+                        )
+                );
+        Map<String, Double> similarity = new HashMap<>();
+        avgDegree.forEach(
+                (s, aDouble) -> {
+                    double simi = Math.pow(age - aDouble, 2) + Math.pow(gender * 100 - avgMale.get(s), 2)
+                            + Math.pow(isBachelorOrHigher * 100 - avgDegree.get(s), 2);
+                    similarity.put(s, simi);
+                }
+        );
+        Map<String, String> titles = new HashMap<>();
+        similarity.forEach(
+                (s, aDouble) -> {
+                    titles.put(s,
+                            courses.stream()
+                            .filter(course -> course.number.equals(s))
+                            .max(Comparator.comparing(Course::getLaunchDate)).get().title);
+                }
+        );
+        Map<String, Double> sorted = similarity.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue())
+                .collect(
+                        Collectors.toMap(
+                                Map.Entry::getKey,
+                                Map.Entry::getValue,
+                                (oldVal, newVal) -> oldVal,
+                                LinkedHashMap::new)
+                );
+        List<String> fin = new ArrayList<>();
+        sorted.forEach(
+                (s, aDouble) -> {
+
+                }
+        );
         return null;
     }
 
@@ -218,4 +303,27 @@ class Course {
         return title;
     }
 
+    public String getSubject() {
+        return subject;
+    }
+
+    public double getMedianAge() {
+        return medianAge;
+    }
+
+    public double getPercentMale() {
+        return percentMale;
+    }
+
+    public double getPercentDegree() {
+        return percentDegree;
+    }
+
+    public String getNumber() {
+        return number;
+    }
+
+    public Date getLaunchDate() {
+        return launchDate;
+    }
 }

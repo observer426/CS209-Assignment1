@@ -182,7 +182,7 @@ public class OnlineCoursesAnalyzer {
                         )
                 );
         Map<String, Double> similarity = new HashMap<>();
-        avgDegree.forEach(
+        avgAge.forEach(
                 (s, aDouble) -> {
                     double simi = Math.pow(age - aDouble, 2) + Math.pow(gender * 100 - avgMale.get(s), 2)
                             + Math.pow(isBachelorOrHigher * 100 - avgDegree.get(s), 2);
@@ -194,30 +194,51 @@ public class OnlineCoursesAnalyzer {
                 (s, aDouble) -> {
                     titles.put(s,
                             courses.stream()
-                            .filter(course -> course.number.equals(s))
-                            .max(Comparator.comparing(Course::getLaunchDate)).get().title);
+                                    .filter(course -> course.number.equals(s))
+                                    .max(Comparator.comparing(Course::getLaunchDate)).get().title);
                 }
         );
-        Map<String, Double> sorted = similarity.entrySet().stream()
-                .sorted(Map.Entry.comparingByValue())
-                .collect(
-                        Collectors.toMap(
-                                Map.Entry::getKey,
-                                Map.Entry::getValue,
-                                (oldVal, newVal) -> oldVal,
-                                LinkedHashMap::new)
-                );
-        List<String> fin = new ArrayList<>();
-        sorted.forEach(
-                (s, aDouble) -> {
 
+        List<Q6> fin = new ArrayList<>();
+        similarity.forEach(
+                (s, aDouble) -> {
+                    fin.add(new Q6(s,titles.get(s),aDouble));
                 }
         );
-        return null;
+        List<Q6> sorted = fin.stream()
+                .sorted(Comparator.comparing(Q6::getSimi).thenComparing(Comparator.comparing(Q6::getTitle)))
+                .toList();
+//        sorted.forEach(
+//                s->{
+//                    System.out.println(s.title + " " +s.simi);
+//                }
+//        );
+        List<String> finalTitle = sorted.stream()
+                .map(Q6::getTitle)
+                .distinct().limit(10).toList();
+        return finalTitle;
     }
 
 }
+class Q6{
+    String number;
+    String title;
+    double simi;
 
+    public Q6(String number, String title, double simi) {
+        this.number = number;
+        this.title = title;
+        this.simi = simi;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public double getSimi() {
+        return simi;
+    }
+}
 class Course {
     String institution;
     String number;
